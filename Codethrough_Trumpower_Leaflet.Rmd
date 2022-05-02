@@ -1,0 +1,316 @@
+---
+title: "Making Maps With Leaflet"
+author: "Amy T. Trumpower"
+date: "5/1/2022"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: true
+    theme: cosmo
+  
+---
+
+## Introduction
+Leaflet is an open-source tool used with interactive maps. Leaflet can render objects from SP, SF or from lat/long data in a data frame. By combining the functionality of Leaflet with a useful data source, the user has the ability to easily create interactive maps to tell their data story.
+
+This code-through was created to provide basic information on the functionality of the Leaflet Code Package for R. This does not include all of the options, functions, or capabilities of Leaflet. The intent is to give you a glimpse into how easy it is to get started with Leaflet and mapping data.
+
+***
+
+## Step 1: Install Packages
+
+These are the Packages you  need to install. You only need to run this chunk once and the packages will be loaded until you uninstall them or there is a newer version.
+
+```{r}
+#install.packages("tidyverse")
+#install.packages("leaflet")
+```
+
+## Step 2: Load Packages
+
+The packages will need to be loaded each time you run the file
+
+```{r, warning=FALSE, message=FALSE}
+library("tidyverse")
+library("leaflet")
+library("pander")
+```
+
+## Step 3: Load Data
+Here is a sample set of data that I have created. It is a list of all the National Parks in the US at this time (Spring 2022), the state of location, and Lat/Long coordinates. Feel free to use this data to learn.
+
+```{r, message=FALSE}
+parks <- read_csv("https://raw.githubusercontent.com/AmyTrumpower/tst/main/parks1.csv")
+```
+
+### 3.1 Check Your Data
+
+It's always a good idea to make sure your data loaded as your intended.
+
+```{r}
+head (parks)
+```
+
+## Step 4: Pick Your Maps
+
+Using leaflet you have the option of using the base map (openstreet map) or one of many 3rd party free maps. In Leaflet, maps are called **Tiles**.
+
+### The Base Map
+
+If you want to use the base map, simply type **addTiles()** to your code. the **%>%** is an important operator in this tutorial. In R, this is called a **Pipe Operator** and it takes the output from one line and passes it to the next. Make sure you pay attention to the Pipe Operators in the code.
+
+```{r, message=FALSE}
+m <- leaflet( )%>%
+  addTiles()
+m
+```
+
+### Third- Party Map Tiles
+
+Leaflet is nice because it has functionality that supports third-party base maps. These base maps offer the user different options of maps from traditional to stylized. You can view the different maps on the GitHub page here:
+
+
+[Leaflet Third Party Maps Link.](http://leaflet-extras.github.io/leaflet-providers/preview/index.html)
+
+## Step 5: Adding the Map
+
+### Adding One Tile (Map)
+
+To add the first map or if you only want to add one map you must choose the map and pass the data to that map using the Pipe Operator. 
+
+```{r, message=FALSE}
+parks %>% # pass your data
+  leaflet() %>%
+  addProviderTiles(providers$Esri) # the chosen map
+```
+
+### Adding Multiple Tiles (Maps) By Using Layers
+
+Leaflet has the capability of multiple tile layers with a radio button for the user to pick the tile they prefer.
+
+To add multiple tiles:</br>
+
+- Add all of the tiles with the **addProviderTiles()** and the group name that will appear by the radio button. </br>
+
+- **addLayersControl()** to create the user control to chose the map. </br>
+
+- You can adjust the location of the Layer Control by using the **position** function and set it to : "topleft", "topright", "bottomleft", or "bottomright"</br>
+
+- Make sure to add the first map to the  group and to the layers control.
+
+```{r, message=FALSE}
+
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")
+
+```
+
+## Step 6: Adding the Locations using Markers 
+
+The **addCircles()** function will add the points on your map that are listed in your data file by latitude and longitude. You can choose several different markers like circles, markers, and circlemarkers. Each has their own set of options so look at the information sheets to customize the markers to your liking. Here are a few options to get started...
+
+A map using **addCircles()** with the default functions:
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+    addCircles(label = parks$Park)
+          
+```
+
+I chose the **addCircleMarkers**()for the map. The default map looks like:
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+    addCircleMarkers(label = parks$Park)
+```
+
+### Option 1: Clustering
+
+As you can see, the map looks cluttered. When you use **addMarkers()** or addCircleMarkers()the clusterOption will automatically combine and total data points that are geographically close. As the user zooms in and out the marker recalculates and makes a cleaner map.
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+    addCircleMarkers(label = parks$Park, 
+                    clusterOptions = markerClusterOptions()) 
+```
+
+### Option 2: Look and Feel
+
+The **addCircles()** and **addcircleMarkers()** can be customized to change the look and feel of the circle or marker. Color, fill (y/n), opacity, and size are some of the visual changes that can be customized.
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+    addCircleMarkers(label = parks$Park, 
+                    clusterOptions = markerClusterOptions(),
+                    color="magenta",
+                    weight= 1, #the outline of the circle
+                    radius= 3, #the radius of the circle
+                    opacity = 0.7) 
+```
+
+### Option 3: AutoZoom and Start Point
+
+By using **setView()** with the option of zoom= Leaflet has the capability to specify the start point (by lat/long) and zoom so you can have the best possible starting map for the user. Since this example looks at US Parks, I'm going to start the map with North America in the frame but zoomed out far enough to see all of the points, including American Samoa. I want to be sure the user does not miss any important data.
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+   
+  addCircleMarkers(label = parks$Park, 
+                    clusterOptions = markerClusterOptions(),
+                    color="magenta",
+                    weight= 1, #the outline of the circle
+                    radius= 3, #the radius of the circle
+                    opacity = 0.7)%>%
+
+    setView(lat = 37.09024 , lng = -95.712891, zoom = 2)
+
+```
+
+### Option 4: MiniMaps
+
+Use **addMinimap()** function to easily place a minimap that will update as the user zooms in and out of the main map. The default map is the base map but can be specified with the function tile=. To use the **tile=** function. Don't forget to update **addProviderTiles** and a group name as in Step 5 with your minimap name if it is not one of your main map names.  The position, size, and toggleDisplay(t/f)are some of the options for **addMinimap()**.
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+   
+  addCircleMarkers(label = parks$Park, 
+                    clusterOptions = markerClusterOptions(),
+                    color="magenta",
+                    weight= 1, #the outline of the circle
+                    radius= 3, #the radius of the circle
+                    opacity = 0.7)%>%
+
+  setView(lat = 37.09024 , lng = -95.712891, zoom = 2)%>%
+
+  addMiniMap(toggleDisplay = TRUE,
+            tiles = providers$Esri,
+            zoomAnimation = TRUE,
+            minimized = TRUE
+    )
+
+```
+
+### Option 5: Leaflet Measure Plugin 
+
+One of the handy add-ons when looking at a leaflet created map is **addMeasure()**. By adding the **addMeasure()** widget to a map the user can measure distance and area on the map. Customization of the widget includes specifications like a primary and secondary length and area unit, colors, and position.
+
+The widget will be placed in the top-right corner. The user opens the widget, clicks **Create New Measurement **, clicks the points on the map, then clicks **Finish Measurement**. The widget will return a pop-up with information about the line or area selected.
+
+```{r, message=FALSE}
+parks %>% 
+  leaflet() %>%
+    addProviderTiles(providers$Esri, group = "Esri") %>%  
+    addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+    addProviderTiles(providers$OpenTopoMap, group = "Open Topo Map") %>%  
+    addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+    addLayersControl(baseGroups = c("Esri",
+                                  "Toner Lite", 
+                                  "World Imagery", 
+                                  "Open Topo Map"), 
+                                  position="bottomleft")%>%
+   
+  addCircleMarkers(label = parks$Park, 
+                    clusterOptions = markerClusterOptions(),
+                    color="magenta",
+                    weight= 1, #the outline of the circle
+                    radius= 3, #the radius of the circle
+                    opacity = 0.7)%>%
+
+  setView(lat = 37.09024 , lng = -95.712891, zoom = 2)%>%
+
+  addMiniMap(toggleDisplay = TRUE,
+            tiles = providers$Esri,
+            zoomAnimation = TRUE,
+            minimized = TRUE)%>%
+
+  addMeasure(
+    activeColor = "#3D535D",
+    completedColor = "#7D4479",
+  )
+```
+
+***
+
+## Sources
+
+[Leaflet for R](https://rstudio.github.io/leaflet/)</br>
+[Leaflet Maps](http://leaflet-extras.github.io/leaflet-providers/preview/index.html)</br>
+[Leaflet Cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/leaflet.pdf)</br>
+[US National Parks Lat/Long list](https://en.wikipedia.org/wiki/List_of_national_parks_of_the_United_States)</br>
+[US National Park Service](https://www.nps.gov/index.htm)</br>
+
+
+
+
+
+
+
